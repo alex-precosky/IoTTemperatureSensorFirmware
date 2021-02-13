@@ -1,65 +1,85 @@
+#include <Arduino.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include "LowPower.h"
 
-static const int XBEE_SLEEP_GPIO_PIN = 3;
-static const int LED_GPIO_PIN = 7;
-static const int TEMP_SENSOR_ADC_PIN = A0;
-static const int BATTERY_VOLTAGE_ADC_PIN = A1;
+const uint8_t LED_PIN = 7;
+const uint8_t SLEEP_PIN = 3;
+const uint8_t ONE_WIRE_PIN = 8;
+const uint8_t BATTERY_VOLTAGE_PIN = A1;
 
-static const int XBEE_WAKEUP_DELAY_MS = 10;
+float read_temperature();
+float read_battery_voltage();
 
-static void SelectInternalADCRef();
+OneWire oneWire(ONE_WIRE_PIN);
+DallasTemperature temperature_sensors(&oneWire);
 
 void setup() {
-    pinMode(XBEE_SLEEP_GPIO_PIN, OUTPUT);
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(SLEEP_PIN, OUTPUT);
+
+    oneWire.reset();
+    temperature_sensors.begin();
+    temperature_sensors.setWaitForConversion(false);
+    read_temperature();
+   
+   // wait the sample time so that the first reading in loop() will not be the startup value of 85 deg C
+    LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF); 
+    LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF); 
+
     Serial.begin(57600);
-    analogReference(INTERNAL);
 }
 
 void loop() {
-    digitalWrite(LED_GPIO_PIN, HIGH);
+    char serial_msg[150];
+    char temperature_str[10];
+    char voltage_str[10];
 
-    // wake up the xbee and give it some time to come up
-    digitalWrite(XBEE_SLEEP_GPIO_PIN, LOW);
-    delay(XBEE_WAKEUP_DELAY_MS);
-
-    SelectInternalADCRef();
-
-    int sensorValue = analogRead(TEMP_SENSOR_ADC_PIN);
-    int batteryValue = analogRead(BATTERY_VOLTAGE_ADC_PIN);
-
-    // Convert ADC values to units
-    float temperature = sensorValue * (1.1 / 1023.0) * 100;  // * 100 because the sensor outupts 10 mV per degree C above 0
-    float batteryVoltage = batteryValue * (1.1 / 1023.0) * 5.5696;
-
-    // Transmit the result
-    Serial.print("sensor_data:station=alexfridge&names=temp,battVoltage&values=");
-    Serial.print(temperature);
-    Serial.print(",");
-    Serial.print(batteryVoltage);
-    Serial.println("&units=C,V");
-
-    //sleep the xbee
-    digitalWrite(XBEE_SLEEP_GPIO_PIN, HIGH);
-    delay(20);
-
-    digitalWrite(LED_GPIO_PIN, LOW);
-
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-    LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
-}
-
-static void SelectInternalADCRef()
-{
+    // measure the battery voltage
     // Use internal 1.1V analog reference for the temperature sensor
     analogReference(INTERNAL);
-    delay(20);
 
     // Doing some readings after changing the reference voltage
-    for(int i = 0; i < 50; i++) {
-        (void)analogRead(BATTERY_VOLTAGE_ADC_PIN);
-        (void)analogRead(TEMP_SENSOR_ADC_PIN);
-    }
+    float batteryVoltage;
+    for(int i = 0; i < 5; i++)
+         batteryVoltage = read_battery_voltage();
 
-    delay(7);
+    // do temperature measurement
+    float temperature = read_temperature();
 
+    // prepare the result that will be sent
+    // Transmit the result
+    dtostrf(temperature, 4, 2, temperature_str);
+    dtostrf(batteryVoltage, 4, 2, voltage_str);
+    sprintf(serial_msg, "sensor_data:station=alexfridge&names=temp,battVoltage&values=%s,%s&units=C,V", temperature_str, voltage_str);
+
+    // wake up the xbee and give it some time.
+    // take this opportunity to blink the LED
+    digitalWrite(SLEEP_PIN, LOW);
+    digitalWrite(LED_PIN, HIGH);
+    delay(1);
+    digitalWrite(LED_PIN, LOW);
+    delay(20);
+
+    // send the message
+    Serial.println(serial_msg);
+
+    //sleep the xbee
+    delay(25);
+    digitalWrite(SLEEP_PIN, HIGH); 
+ 
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);  
+    LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);  
+    
+}
+
+float read_temperature()
+{
+    temperature_sensors.requestTemperatures();
+	return temperature_sensors.getTempCByIndex(0);
+}
+
+float read_battery_voltage()
+{
+    return analogRead(BATTERY_VOLTAGE_PIN) / 1024.0 * 5.3 * 1.1 * 1.032663; // last one was a calibration factor for the prototype
 }
