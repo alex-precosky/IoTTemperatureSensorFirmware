@@ -9,11 +9,27 @@
 
 PlatformIO Core
 
+```
 python3 -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
+```
 
-# PlatformIO 
+A device capable of flashing the atmega328p. I use an AVRISP mkII and the
+instructions here will reflect that
+
+# Setup
 
 export PATH=$PATH:~/.platformio/penv/bin
+
+## Udev rule for avrdude
+Create file 99-avrdude.rule in /etc/udev/ruled.d/99-avrdude.rule:
+
+```
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2104", GROUP="users", MODE="0666"
+```
+
+And run `udevadm control --reload-rules`
+
+This will give users permission to use the flashing device.
 
 # Building
 
@@ -46,4 +62,9 @@ Flash: [=         ]  13.2% (used 4268 bytes from 32256 bytes)
 ```
 
 # Flashing
-`pio run --upload`
+See note in Setup for a udev rule required to give permissions to use the programmer
+
+The following command will build the project and upload the flash image to the
+device and start the program:
+
+`pio run --target upload`
