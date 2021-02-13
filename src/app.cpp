@@ -14,7 +14,8 @@ float read_battery_voltage();
 OneWire oneWire(ONE_WIRE_PIN);
 DallasTemperature temperature_sensors(&oneWire);
 
-void setup() {
+void setup()
+{
     pinMode(LED_PIN, OUTPUT);
     pinMode(SLEEP_PIN, OUTPUT);
 
@@ -22,15 +23,16 @@ void setup() {
     temperature_sensors.begin();
     temperature_sensors.setWaitForConversion(false);
     read_temperature();
-   
-   // wait the sample time so that the first reading in loop() will not be the startup value of 85 deg C
-    LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF); 
-    LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF); 
+
+    // wait the sample time so that the first reading in loop() will not be the startup value of 85 deg C
+    LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF);
+    LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF);
 
     Serial.begin(57600);
 }
 
-void loop() {
+void loop()
+{
     char serial_msg[150];
     char temperature_str[10];
     char voltage_str[10];
@@ -42,7 +44,7 @@ void loop() {
     // Doing some readings after changing the reference voltage
     float batteryVoltage;
     for(int i = 0; i < 5; i++)
-         batteryVoltage = read_battery_voltage();
+        batteryVoltage = read_battery_voltage();
 
     // do temperature measurement
     float temperature = read_temperature();
@@ -66,17 +68,16 @@ void loop() {
 
     //sleep the xbee
     delay(25);
-    digitalWrite(SLEEP_PIN, HIGH); 
- 
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);  
-    LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);  
-    
+    digitalWrite(SLEEP_PIN, HIGH);
+
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+    LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
 }
 
 float read_temperature()
 {
     temperature_sensors.requestTemperatures();
-	return temperature_sensors.getTempCByIndex(0);
+    return temperature_sensors.getTempCByIndex(0);
 }
 
 float read_battery_voltage()
