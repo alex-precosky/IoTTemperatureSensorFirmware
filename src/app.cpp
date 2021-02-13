@@ -1,6 +1,7 @@
 #include "LowPower.h"
 
 static const int XBEE_SLEEP_GPIO_PIN = 3;
+static const int LED_GPIO_PIN = 7;
 static const int TEMP_SENSOR_ADC_PIN = A0;
 static const int BATTERY_VOLTAGE_ADC_PIN = A1;
 
@@ -15,6 +16,8 @@ void setup() {
 }
 
 void loop() {
+    digitalWrite(LED_GPIO_PIN, HIGH);
+
     // wake up the xbee and give it some time to come up
     digitalWrite(XBEE_SLEEP_GPIO_PIN, LOW);
     delay(XBEE_WAKEUP_DELAY_MS);
@@ -38,6 +41,8 @@ void loop() {
     //sleep the xbee
     digitalWrite(XBEE_SLEEP_GPIO_PIN, HIGH);
     delay(20);
+
+    digitalWrite(LED_GPIO_PIN, LOW);
 
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
     LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
