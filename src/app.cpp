@@ -1,12 +1,22 @@
-#include <Arduino.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include "LowPower.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include "Arduino.h"
+#include "DallasTemperature.h"
+#include "LowPower.h"
+#include "OneWire.h"
+
+// Arduino pin assignments
 const uint8_t LED_PIN = 7;
 const uint8_t SLEEP_PIN = 3;
 const uint8_t ONE_WIRE_PIN = 8;
 const uint8_t BATTERY_VOLTAGE_PIN = A1;
+
+const int ADC_REF_CHANGE_READINGS = 5; // ADC readings performed after changing ADC reference voltage
+
+const float ADC_MAX = 1023;
+const float ADC_REF_V = 1.1;
 
 float read_temperature();
 float read_battery_voltage();
@@ -24,7 +34,8 @@ void setup()
     temperature_sensors.setWaitForConversion(false);
     read_temperature();
 
-    // wait the sample time so that the first reading in loop() will not be the startup value of 85 deg C
+    /* power down for one DS18B20 750ms sample period so that the first reading
+       from the DS18B20 in loop() will not be the startup value of 85 deg C */
     LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF);
     LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF);
 
@@ -43,7 +54,7 @@ void loop()
 
     // Doing some readings after changing the reference voltage
     float batteryVoltage;
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < ADC_REF_CHANGE_READINGS; i++)
         batteryVoltage = read_battery_voltage();
 
     // do temperature measurement
@@ -82,5 +93,5 @@ float read_temperature()
 
 float read_battery_voltage()
 {
-    return analogRead(BATTERY_VOLTAGE_PIN) / 1024.0 * 5.3 * 1.1 * 1.032663; // last one was a calibration factor for the prototype
+    return analogRead(BATTERY_VOLTAGE_PIN) / ADC_MAX * 5.3 * ADC_REF_V * 1.032663; // last one was a calibration factor for the prototype
 }
