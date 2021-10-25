@@ -18,8 +18,8 @@ const int ADC_REF_CHANGE_READINGS = 5; // ADC readings performed after changing 
 const float ADC_MAX = 1023;
 const float ADC_REF_V = 1.1;
 
-float read_temperature();
-float read_battery_voltage();
+static float read_temperature();
+static float read_battery_voltage();
 
 OneWire oneWire(ONE_WIRE_PIN);
 DallasTemperature temperature_sensors(&oneWire);
@@ -62,8 +62,10 @@ void loop()
 
     // prepare the result that will be sent
     // Transmit the result
-    dtostrf(temperature, 4, 2, temperature_str);
-    dtostrf(batteryVoltage, 4, 2, voltage_str);
+    const signed char min_width = 4;
+    const unsigned char decimal_places = 2;
+    dtostrf(temperature, min_width, decimal_places, temperature_str);
+    dtostrf(batteryVoltage, min_width, decimal_places, voltage_str);
     sprintf(serial_msg, "sensor_data:station=alexfridge&names=temp,battVoltage&values=%s,%s&units=C,V", temperature_str, voltage_str);
 
     // wake up the xbee and give it some time.
@@ -77,7 +79,7 @@ void loop()
     // send the message
     Serial.println(serial_msg);
 
-    //sleep the xbee
+    // sleep the xbee
     delay(25);
     digitalWrite(SLEEP_PIN, HIGH);
 
@@ -85,13 +87,13 @@ void loop()
     LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
 }
 
-float read_temperature()
+static float read_temperature()
 {
     temperature_sensors.requestTemperatures();
     return temperature_sensors.getTempCByIndex(0);
 }
 
-float read_battery_voltage()
+static float read_battery_voltage()
 {
     return analogRead(BATTERY_VOLTAGE_PIN) / ADC_MAX * 5.3 * ADC_REF_V * 1.032663; // last one was a calibration factor for the prototype
 }
