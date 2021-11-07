@@ -17,6 +17,10 @@ const int ADC_REF_CHANGE_READINGS = 5; // ADC readings performed after changing 
 
 const float ADC_MAX = 1023;
 const float ADC_REF_V = 1.1;
+const float BATTERY_VOLTAGE_DIVIDER_FACTOR = 5.3; // The battery voltage is
+                                                  // measured at the bottom of a
+                                                  // 530 kohm + 100 kohm voltage
+                                                  // divider
 
 static float read_temperature();
 static float read_battery_voltage();
@@ -95,5 +99,5 @@ static float read_temperature()
 
 static float read_battery_voltage()
 {
-    return analogRead(BATTERY_VOLTAGE_PIN) / ADC_MAX * 5.3 * ADC_REF_V * 1.032663; // last one was a calibration factor for the prototype
+    return analogRead(BATTERY_VOLTAGE_PIN) / ADC_MAX * BATTERY_VOLTAGE_DIVIDER_FACTOR * ADC_REF_V * 1.032663; // last one was a calibration factor for the prototype
 }
