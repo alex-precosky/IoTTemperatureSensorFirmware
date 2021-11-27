@@ -64,6 +64,11 @@ Flash: [=         ]  13.2% (used 4268 bytes from 32256 bytes)
 # Flashing
 See note in Setup for a udev rule required to give permissions to use the programmer
 
+The first time a new device is programmed, the efuses must be programmed by
+running:
+
+`pio run --target fuses`
+
 The following command will build the project and upload the flash image to the
 device and start the program:
 
