@@ -22,6 +22,15 @@ const float BATTERY_VOLTAGE_DIVIDER_FACTOR = 5.3; // The battery voltage is
                                                   // 530 kohm + 100 kohm voltage
                                                   // divider
 
+const uint32_t LED_BLINK_ON_TIME_MS = 1; // The LED is blinked on this long when transmitting a message
+const uint32_t RADIO_POWERUP_SLEEP_TIME_MS = 20; // The XBee is given this long
+                                                 // after the wakeup pin is
+                                                 // asserted before it is used
+                                                 // to send a message
+const uint32_t RADIO_SEND_TIME_MS = 25; // The radio is given this much time to
+                                        // send a message before its sleep pin
+                                        // is asserted
+
 static float read_temperature();
 static float read_battery_voltage();
 
@@ -76,15 +85,15 @@ void loop()
     // take this opportunity to blink the LED
     digitalWrite(SLEEP_PIN, LOW);
     digitalWrite(LED_PIN, HIGH);
-    delay(1);
+    delay(LED_BLINK_ON_TIME_MS);
     digitalWrite(LED_PIN, LOW);
-    delay(20);
+    delay(RADIO_POWERUP_SLEEP_TIME_MS);
 
     // send the message
     Serial.println(serial_msg);
 
     // sleep the xbee
-    delay(25);
+    delay(RADIO_SEND_TIME_MS);
     digitalWrite(SLEEP_PIN, HIGH);
 
     LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
